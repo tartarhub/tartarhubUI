@@ -71,7 +71,7 @@ ScreenGui.Parent = player:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
 
 local ClickSound = Instance.new("Sound", ScreenGui)
-ClickSound.SoundId = "rbxassetid://6895079853"
+ClickSound.SoundId = "rbxassetid://134787106348451"
 ClickSound.Volume = 0.5
 
 -- Theme Helper
