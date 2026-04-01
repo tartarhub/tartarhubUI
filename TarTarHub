@@ -21,7 +21,7 @@ local waypoints = {Vector3.new(-79.1, 145.4, -81.4), Vector3.new(-12, 146.9, -80
 local function PlayScream()
     local Scream = Instance.new("Sound")
     Scream.Parent = game:GetService("SoundService")
-    Scream.SoundId = "rbxassetid://140729021718836"
+    Scream.SoundId = "rbxassetid://134787106348451"
     Scream.Volume = 1
     Scream:Play()
     game:GetService("Debris"):AddItem(Scream, 5) -- Clean up after 5 seconds
