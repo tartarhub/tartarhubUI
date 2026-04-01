@@ -1,0 +1,280 @@
+--this script was made by asbakbaligokgok:)
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
+local player = Players.LocalPlayer
+
+-- --- FILE SYSTEM SETUP ---
+local fileName = "AsbakExecutor_Save.txt"
+local function SaveScript(code)
+    if writefile then
+        writefile(fileName, code)
+        return true
+    end
+    return false
+end
+
+local function LoadScript()
+    if readfile and isfile and isfile(fileName) then
+        return readfile(fileName)
+    end
+    return "-- paste script here"
+end
+
+-- --- UI CREATION ---
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local ToggleBtn = Instance.new("TextButton")
+local IYBtn = Instance.new("TextButton") 
+local AquaBtn = Instance.new("TextButton") 
+local ToolCounterBtn = Instance.new("TextButton")
+local ExecToggleBtn = Instance.new("TextButton") 
+local SpeedInput = Instance.new("TextBox")
+local StatusLabel = Instance.new("TextLabel")
+
+-- --- EXECUTOR STUFF ---
+local ExecFrame = Instance.new("Frame")
+local CodeBox = Instance.new("TextBox")
+local RunCodeBtn = Instance.new("TextButton")
+local ClearCodeBtn = Instance.new("TextButton")
+local SaveBtn = Instance.new("TextButton") -- New Save Button
+
+local MainCorner = Instance.new("UICorner")
+local MainGradient = Instance.new("UIGradient")
+local MainStroke = Instance.new("UIStroke")
+
+local CloseBtn = Instance.new("TextButton")
+local MinBtn = Instance.new("TextButton")
+local RestoreBtn = Instance.new("TextButton")
+
+-- --- SOUND SETUP ---
+local ClickSound = Instance.new("Sound")
+ClickSound.SoundId = "rbxassetid://6895079853"
+ClickSound.Volume = 0.5
+ClickSound.Parent = MainFrame
+
+ScreenGui.Name = "ModernWaypointUI"
+ScreenGui.Parent = player:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
+
+-- Main Frame Styling
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.new(1, 1, 1)
+MainFrame.Position = UDim2.new(0.1, 0, 0.1, 0)
+MainFrame.Size = UDim2.new(0, 220, 0, 420) 
+MainFrame.Active = true
+MainFrame.Draggable = true 
+MainFrame.ClipsDescendants = true
+
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = MainFrame
+
+MainGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromHSV(0, 1, 1)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromHSV(0.5, 1, 1)),
+    ColorSequenceKeypoint.new(1, Color3.fromHSV(1, 1, 1))
+})
+MainGradient.Rotation = 45
+MainGradient.Parent = MainFrame
+
+MainStroke.Color = Color3.fromRGB(255, 255, 255)
+MainStroke.Thickness = 2
+MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+MainStroke.Parent = MainFrame
+
+Title.Parent = MainFrame
+Title.Size = UDim2.new(1, 0, 0, 35)
+Title.BackgroundTransparency = 1
+Title.Text = "   tartar's troll UI"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 16
+Title.Font = Enum.Font.GothamBold
+
+-- --- UTILITY ---
+local function Notify(title, text)
+    StarterGui:SetCore("SendNotification", {Title = title; Text = text; Duration = 3})
+end
+
+local function StyleButton(btn, color)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    btn.BackgroundColor3 = color
+    btn.Font = Enum.Font.GothamBold
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.TextSize = 14
+    btn.ClipsDescendants = true
+    btn.MouseButton1Down:Connect(function() ClickSound:Play() end)
+end
+
+-- --- BUTTONS ---
+CloseBtn.Parent = MainFrame
+CloseBtn.Size = UDim2.new(0, 25, 0, 25)
+CloseBtn.Position = UDim2.new(1, -30, 0, 5)
+CloseBtn.Text = "×"
+StyleButton(CloseBtn, Color3.fromRGB(200, 50, 50))
+
+MinBtn.Parent = MainFrame
+MinBtn.Size = UDim2.new(0, 25, 0, 25)
+MinBtn.Position = UDim2.new(1, -60, 0, 5)
+MinBtn.Text = "—"
+StyleButton(MinBtn, Color3.fromRGB(60, 60, 60))
+
+ToggleBtn.Parent = MainFrame
+ToggleBtn.Position = UDim2.new(0.1, 0, 0.1, 0)
+ToggleBtn.Size = UDim2.new(0.8, 0, 0, 35)
+ToggleBtn.Text = "Toggle Move"
+StyleButton(ToggleBtn, Color3.fromRGB(40, 40, 40))
+
+IYBtn.Parent = MainFrame
+IYBtn.Position = UDim2.new(0.1, 0, 0.2, 0)
+IYBtn.Size = UDim2.new(0.8, 0, 0, 35)
+IYBtn.Text = "Infinite Yield"
+StyleButton(IYBtn, Color3.fromRGB(30, 30, 30))
+
+AquaBtn.Parent = MainFrame
+AquaBtn.Position = UDim2.new(0.1, 0, 0.3, 0)
+AquaBtn.Size = UDim2.new(0.8, 0, 0, 35)
+AquaBtn.Text = "AquaMatrix"
+StyleButton(AquaBtn, Color3.fromRGB(30, 30, 30))
+
+ToolCounterBtn.Parent = MainFrame
+ToolCounterBtn.Position = UDim2.new(0.1, 0, 0.4, 0)
+ToolCounterBtn.Size = UDim2.new(0.8, 0, 0, 35)
+ToolCounterBtn.Text = "Glove Spawn"
+StyleButton(ToolCounterBtn, Color3.fromRGB(30, 30, 30))
+
+ExecToggleBtn.Parent = MainFrame
+ExecToggleBtn.Position = UDim2.new(0.1, 0, 0.5, 0)
+ExecToggleBtn.Size = UDim2.new(0.8, 0, 0, 35)
+ExecToggleBtn.Text = "Executor [v]"
+StyleButton(ExecToggleBtn, Color3.fromRGB(50, 50, 50))
+
+-- --- EXECUTOR FRAME ---
+ExecFrame.Parent = MainFrame
+ExecFrame.Position = UDim2.new(0.1, 0, 0.6, 0)
+ExecFrame.Size = UDim2.new(0.8, 0, 0, 0)
+ExecFrame.ClipsDescendants = true
+ExecFrame.BackgroundTransparency = 1
+
+CodeBox.Parent = ExecFrame
+CodeBox.Size = UDim2.new(1, 0, 0, 80)
+CodeBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+CodeBox.TextColor3 = Color3.new(1, 1, 1)
+CodeBox.Text = LoadScript()
+CodeBox.ClearTextOnFocus = false
+CodeBox.MultiLine = true
+CodeBox.Font = Enum.Font.Code
+CodeBox.TextSize = 10
+Instance.new("UICorner", CodeBox)
+
+RunCodeBtn.Parent = ExecFrame
+RunCodeBtn.Size = UDim2.new(0.31, 0, 0, 25)
+RunCodeBtn.Position = UDim2.new(0, 0, 0, 85)
+RunCodeBtn.Text = "Run"
+StyleButton(RunCodeBtn, Color3.fromRGB(30, 100, 30))
+
+SaveBtn.Parent = ExecFrame
+SaveBtn.Size = UDim2.new(0.31, 0, 0, 25)
+SaveBtn.Position = UDim2.new(0.345, 0, 0, 85)
+SaveBtn.Text = "Save"
+StyleButton(SaveBtn, Color3.fromRGB(30, 60, 100))
+
+ClearCodeBtn.Parent = ExecFrame
+ClearCodeBtn.Size = UDim2.new(0.31, 0, 0, 25)
+ClearCodeBtn.Position = UDim2.new(0.69, 0, 0, 85)
+ClearCodeBtn.Text = "Clear"
+StyleButton(ClearCodeBtn, Color3.fromRGB(100, 30, 30))
+
+-- Bottom Settings
+SpeedInput.Parent = MainFrame
+SpeedInput.Position = UDim2.new(0.1, 0, 0.88, 0)
+SpeedInput.Size = UDim2.new(0.8, 0, 0, 30)
+SpeedInput.Text = "250"
+SpeedInput.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+SpeedInput.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", SpeedInput)
+
+StatusLabel.Parent = MainFrame
+StatusLabel.Position = UDim2.new(0, 0, 0.95, 0)
+StatusLabel.Size = UDim2.new(1, 0, 0, 20)
+StatusLabel.Text = "bradar its chilling"
+StatusLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+StatusLabel.TextSize = 10
+StatusLabel.BackgroundTransparency = 1
+
+RestoreBtn.Parent = ScreenGui
+RestoreBtn.Size = UDim2.new(0, 120, 0, 35)
+RestoreBtn.Position = UDim2.new(0, 10, 1, -45)
+RestoreBtn.Text = "bradar restore"
+RestoreBtn.Visible = false
+StyleButton(RestoreBtn, Color3.fromRGB(45, 10, 80))
+
+-- --- LOGIC ---
+local execOpen = false
+ExecToggleBtn.MouseButton1Click:Connect(function()
+    execOpen = not execOpen
+    ExecToggleBtn.Text = execOpen and "Executor [^]" or "Executor [v]"
+    local targetSize = execOpen and UDim2.new(0.8, 0, 0, 115) or UDim2.new(0.8, 0, 0, 0)
+    TweenService:Create(ExecFrame, TweenInfo.new(0.3), {Size = targetSize}):Play()
+end)
+
+RunCodeBtn.MouseButton1Click:Connect(function()
+    local success, err = pcall(function() loadstring(CodeBox.Text)() end)
+    Notify(success and "Executor" or "Error", success and "Script Ran!" or "Check console")
+end)
+
+SaveBtn.MouseButton1Click:Connect(function()
+    if SaveScript(CodeBox.Text) then Notify("System", "Script Saved!") else Notify("Error", "Executor not supported") end
+end)
+
+ClearCodeBtn.MouseButton1Click:Connect(function() CodeBox.Text = "" end)
+
+-- Rainbow Loop
+task.spawn(function()
+    while true do
+        local hue = tick() % 5 / 5
+        MainGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromHSV(hue, 1, 1)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromHSV((hue + 0.25) % 1, 1, 1)),
+            ColorSequenceKeypoint.new(1, Color3.fromHSV((hue + 0.5) % 1, 1, 1))
+        })
+        MainStroke.Color = Color3.fromHSV(hue, 0.8, 1)
+        RunService.RenderStepped:Wait()
+    end
+end)
+
+-- Movement
+local isRunning = false
+local waypoints = {Vector3.new(-79.18, 145.41, -81.43), Vector3.new(-12.04, 146.96, -80.25)}
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    isRunning = not isRunning
+    ToggleBtn.Text = isRunning and "ON" or "OFF"
+    ToggleBtn.BackgroundColor3 = isRunning and Color3.fromRGB(80, 20, 150) or Color3.fromRGB(40, 40, 40)
+    StatusLabel.Text = isRunning and "STATUS: doing job" or "STATUS: chilling"
+end)
+
+task.spawn(function()
+    while true do
+        if isRunning then
+            local char = player.Character or player.CharacterAdded:Wait()
+            local root = char:WaitForChild("HumanoidRootPart")
+            for _, wp in ipairs(waypoints) do
+                if not isRunning then break end
+                local speed = tonumber(SpeedInput.Text) or 250
+                local dist = (root.Position - wp).Magnitude
+                local t = TweenService:Create(root, TweenInfo.new(dist/speed, Enum.EasingStyle.Linear), {CFrame = CFrame.new(wp)})
+                t:Play()
+                t.Completed:Wait()
+                task.wait(0.1)
+            end
+        end
+        task.wait(0.1)
+    end
+end)
+
+CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+MinBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false; RestoreBtn.Visible = true end)
+RestoreBtn.MouseButton1Click:Connect(function() MainFrame.Visible = true; RestoreBtn.Visible = false end)
