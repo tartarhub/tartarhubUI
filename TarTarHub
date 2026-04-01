@@ -1,280 +1,223 @@
---this script was made by asbakbaligokgok:)
+-- tartar hub :) 
+-- Added Flapjack Scream on Execution + Admin Detector
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
+local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
--- --- FILE SYSTEM SETUP ---
-local fileName = "AsbakExecutor_Save.txt"
-local function SaveScript(code)
-    if writefile then
-        writefile(fileName, code)
-        return true
-    end
-    return false
+-- --- CONFIG ---
+local mainGuiHotkey = Enum.KeyCode.RightShift
+local moverHotkey = Enum.KeyCode.E
+local isListeningMain = false
+local isListeningMover = false
+local guiVisible = true
+local isRunning = false
+local movementSpeed = 250
+local lastPos = UDim2.new(0.5, -90, 0.5, -135) 
+local waypoints = {Vector3.new(-79.1, 145.4, -81.4), Vector3.new(-12, 146.9, -80.2)}
+
+-- --- AUDIO EXECUTION ---
+local function PlayScream()
+    local Scream = Instance.new("Sound")
+    Scream.Parent = game:GetService("SoundService")
+    Scream.SoundId = "rbxassetid://140729021718836"
+    Scream.Volume = 1
+    Scream:Play()
+    game:GetService("Debris"):AddItem(Scream, 5) -- Clean up after 5 seconds
 end
 
-local function LoadScript()
-    if readfile and isfile and isfile(fileName) then
-        return readfile(fileName)
-    end
-    return "-- paste script here"
+-- --- NOTIFICATION SYSTEM ---
+local function Notify(title, text)
+    task.spawn(function()
+        pcall(function()
+            StarterGui:SetCore("SendNotification", {
+                Title = title,
+                Text = text,
+                Duration = 5,
+                Icon = "rbxassetid://6032220199"
+            })
+        end)
+    end)
 end
+
+-- --- ADMIN DETECTOR ---
+local function CheckForAdmin(p)
+    if p == player then return end
+    task.spawn(function()
+        task.wait(1) 
+        local rank = p:GetRoleInGroup(game.CreatorId) or "None"
+        local staffKeywords = {"admin", "mod", "staff", "owner", "host", "dev"}
+        local isStaff = false
+        
+        for _, word in ipairs(staffKeywords) do
+            if string.find(string.lower(rank), word) then isStaff = true break end
+        end
+        if p:FindFirstChild("AdminRank") or p:FindFirstChild("HDAdminRank") then isStaff = true end
+
+        if isStaff then
+            Notify("⚠️ ADMIN DETECTED", p.Name .. " (" .. rank .. ")")
+        end
+    end)
+end
+
+Players.PlayerAdded:Connect(CheckForAdmin)
+for _, p in ipairs(Players:GetPlayers()) do CheckForAdmin(p) end
 
 -- --- UI CREATION ---
 local ScreenGui = Instance.new("ScreenGui")
-local MainFrame = Instance.new("Frame")
-local Title = Instance.new("TextLabel")
-local ToggleBtn = Instance.new("TextButton")
-local IYBtn = Instance.new("TextButton") 
-local AquaBtn = Instance.new("TextButton") 
-local ToolCounterBtn = Instance.new("TextButton")
-local ExecToggleBtn = Instance.new("TextButton") 
-local SpeedInput = Instance.new("TextBox")
-local StatusLabel = Instance.new("TextLabel")
-
--- --- EXECUTOR STUFF ---
-local ExecFrame = Instance.new("Frame")
-local CodeBox = Instance.new("TextBox")
-local RunCodeBtn = Instance.new("TextButton")
-local ClearCodeBtn = Instance.new("TextButton")
-local SaveBtn = Instance.new("TextButton") -- New Save Button
-
-local MainCorner = Instance.new("UICorner")
-local MainGradient = Instance.new("UIGradient")
-local MainStroke = Instance.new("UIStroke")
-
-local CloseBtn = Instance.new("TextButton")
-local MinBtn = Instance.new("TextButton")
-local RestoreBtn = Instance.new("TextButton")
-
--- --- SOUND SETUP ---
-local ClickSound = Instance.new("Sound")
-ClickSound.SoundId = "rbxassetid://6895079853"
-ClickSound.Volume = 0.5
-ClickSound.Parent = MainFrame
-
-ScreenGui.Name = "ModernWaypointUI"
+ScreenGui.Name = "TartarHub_Scream"
 ScreenGui.Parent = player:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
 
--- Main Frame Styling
-MainFrame.Name = "MainFrame"
-MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.new(1, 1, 1)
-MainFrame.Position = UDim2.new(0.1, 0, 0.1, 0)
-MainFrame.Size = UDim2.new(0, 220, 0, 420) 
+local ClickSound = Instance.new("Sound", ScreenGui)
+ClickSound.SoundId = "rbxassetid://6895079853"
+ClickSound.Volume = 0.5
+
+-- Theme Helper
+local function ApplyTheme(frame)
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+    local grad = Instance.new("UIGradient", frame)
+    grad.Color = ColorSequence.new(Color3.fromRGB(5, 5, 5), Color3.fromRGB(40, 10, 80))
+    grad.Rotation = 45
+    local stroke = Instance.new("UIStroke", frame)
+    stroke.Thickness = 1.5
+    stroke.Color = Color3.fromRGB(150, 0, 255)
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+end
+
+local function StyleBtn(btn, col)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    btn.BackgroundColor3 = col
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamSemibold
+    btn.TextSize = 10
+    btn.MouseButton1Click:Connect(function() ClickSound:Play() end)
+end
+
+-- Main Frame
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Position = lastPos
+MainFrame.Size = UDim2.new(0, 170, 0, 270)
 MainFrame.Active = true
 MainFrame.Draggable = true 
-MainFrame.ClipsDescendants = true
+ApplyTheme(MainFrame)
 
-MainCorner.CornerRadius = UDim.new(0, 10)
-MainCorner.Parent = MainFrame
+-- Title
+local TitleBar = Instance.new("Frame", MainFrame)
+TitleBar.Size = UDim2.new(1, 0, 0, 26); TitleBar.BackgroundTransparency = 1
+local TitleLabel = Instance.new("TextLabel", TitleBar)
+TitleLabel.Size = UDim2.new(1, -70, 1, 0); TitleLabel.Position = UDim2.new(0, 8, 0, 0)
+TitleLabel.Text = "tartar hub :)"; TitleLabel.TextColor3 = Color3.new(1, 1, 1)
+TitleLabel.Font = Enum.Font.GothamBold; TitleLabel.TextSize = 11; TitleLabel.BackgroundTransparency = 1; TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-MainGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromHSV(0, 1, 1)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromHSV(0.5, 1, 1)),
-    ColorSequenceKeypoint.new(1, Color3.fromHSV(1, 1, 1))
-})
-MainGradient.Rotation = 45
-MainGradient.Parent = MainFrame
+-- Buttons
+local CloseBtn = Instance.new("TextButton", TitleBar); CloseBtn.Size = UDim2.new(0, 18, 0, 18); CloseBtn.Position = UDim2.new(1, -22, 0, 4); CloseBtn.Text = "×"; StyleBtn(CloseBtn, Color3.fromRGB(40,40,40))
+local MinBtn = Instance.new("TextButton", TitleBar); MinBtn.Size = UDim2.new(0, 18, 0, 18); MinBtn.Position = UDim2.new(1, -44, 0, 4); MinBtn.Text = "—"; StyleBtn(MinBtn, Color3.fromRGB(40,40,40))
+local SettingsBtn = Instance.new("TextButton", TitleBar); SettingsBtn.Size = UDim2.new(0, 18, 0, 18); SettingsBtn.Position = UDim2.new(1, -66, 0, 4); SettingsBtn.Text = "⚙"; StyleBtn(SettingsBtn, Color3.fromRGB(40,40,40))
 
-MainStroke.Color = Color3.fromRGB(255, 255, 255)
-MainStroke.Thickness = 2
-MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-MainStroke.Parent = MainFrame
+local ButtonList = Instance.new("Frame", MainFrame)
+ButtonList.Size = UDim2.new(0.9, 0, 1, -35); ButtonList.Position = UDim2.new(0.05, 0, 0, 30); ButtonList.BackgroundTransparency = 1
+Instance.new("UIListLayout", ButtonList).Padding = UDim.new(0, 4)
 
-Title.Parent = MainFrame
-Title.Size = UDim2.new(1, 0, 0, 35)
-Title.BackgroundTransparency = 1
-Title.Text = "   tartar's troll UI"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 16
-Title.Font = Enum.Font.GothamBold
+-- Features
+local ToggleBtn = Instance.new("TextButton", ButtonList); ToggleBtn.Size = UDim2.new(1, 0, 0, 28); ToggleBtn.Text = "Toggle Move"; StyleBtn(ToggleBtn, Color3.fromRGB(30,30,30))
+local IYBtn = Instance.new("TextButton", ButtonList); IYBtn.Size = UDim2.new(1, 0, 0, 28); IYBtn.Text = "Infinite Yield"; StyleBtn(IYBtn, Color3.fromRGB(20,20,20))
+local AquaBtn = Instance.new("TextButton", ButtonList); AquaBtn.Size = UDim2.new(1, 0, 0, 28); AquaBtn.Text = "AquaMatrix"; StyleBtn(AquaBtn, Color3.fromRGB(20,20,20))
+local GloveBtn = Instance.new("TextButton", ButtonList); GloveBtn.Size = UDim2.new(1, 0, 0, 28); GloveBtn.Text = "Glove Spawner"; StyleBtn(GloveBtn, Color3.fromRGB(20,20,20))
+local MoverV1Btn = Instance.new("TextButton", ButtonList); MoverV1Btn.Size = UDim2.new(1, 0, 0, 28); MoverV1Btn.Text = "Mover V1"; StyleBtn(MoverV1Btn, Color3.fromRGB(60, 20, 100))
+local SpeedInput = Instance.new("TextBox", ButtonList); SpeedInput.Size = UDim2.new(1, 0, 0, 28); SpeedInput.Text = "250"; SpeedInput.BackgroundColor3 = Color3.fromRGB(15,15,15); SpeedInput.TextColor3 = Color3.new(1,1,1); Instance.new("UICorner", SpeedInput)
 
--- --- UTILITY ---
-local function Notify(title, text)
-    StarterGui:SetCore("SendNotification", {Title = title; Text = text; Duration = 3})
-end
+-- Windows (Mover & Settings)
+local MoverFrame = Instance.new("Frame", ScreenGui); MoverFrame.Size = UDim2.new(0, 150, 0, 180); MoverFrame.Position = UDim2.new(0.5, 90, 0.5, -90); MoverFrame.Visible = false; ApplyTheme(MoverFrame)
+local MCont = Instance.new("Frame", MoverFrame); MCont.Size = UDim2.new(0.9,0,0.9,0); MCont.Position = UDim2.new(0.05,0,0.05,0); MCont.BackgroundTransparency=1; Instance.new("UIListLayout", MCont).Padding = UDim.new(0,5)
+local MHotkeyBtn = Instance.new("TextButton", MCont); MHotkeyBtn.Size = UDim2.new(1,0,0,28); MHotkeyBtn.Text = "KEY: E"; StyleBtn(MHotkeyBtn, Color3.fromRGB(30,30,30))
+local CoordInput = Instance.new("TextBox", MCont); CoordInput.Size = UDim2.new(1,0,0,28); CoordInput.Text = "0,0,0"; CoordInput.BackgroundColor3=Color3.fromRGB(15,15,15); CoordInput.TextColor3=Color3.new(1,1,1); Instance.new("UICorner", CoordInput)
+local GetPosBtn = Instance.new("TextButton", MCont); GetPosBtn.Size = UDim2.new(1,0,0,28); GetPosBtn.Text = "GET POSITION"; StyleBtn(GetPosBtn, Color3.fromRGB(50,50,50))
+local TeleBtn = Instance.new("TextButton", MCont); TeleBtn.Size = UDim2.new(1,0,0,28); TeleBtn.Text = "TELEPORT"; StyleBtn(TeleBtn, Color3.fromRGB(70,30,120))
+local MClose = Instance.new("TextButton", MCont); MClose.Size = UDim2.new(1,0,0,28); MClose.Text = "CLOSE"; StyleBtn(MClose, Color3.fromRGB(100,20,20))
 
-local function StyleButton(btn, color)
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-    btn.BackgroundColor3 = color
-    btn.Font = Enum.Font.GothamBold
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.TextSize = 14
-    btn.ClipsDescendants = true
-    btn.MouseButton1Down:Connect(function() ClickSound:Play() end)
-end
+local SettingsFrame = Instance.new("Frame", ScreenGui); SettingsFrame.Size = UDim2.new(0, 150, 0, 70); SettingsFrame.Position = UDim2.new(0.5, -75, 0.4, 0); SettingsFrame.Visible = false; ApplyTheme(SettingsFrame)
+local GuiHotkeyBtn = Instance.new("TextButton", SettingsFrame); GuiHotkeyBtn.Size = UDim2.new(0.8, 0, 0, 28); GuiHotkeyBtn.Position = UDim2.new(0.1, 0, 0.3, 0); GuiHotkeyBtn.Text = "UI KEY: RSHIFT"; StyleBtn(GuiHotkeyBtn, Color3.fromRGB(40,40,40))
 
--- --- BUTTONS ---
-CloseBtn.Parent = MainFrame
-CloseBtn.Size = UDim2.new(0, 25, 0, 25)
-CloseBtn.Position = UDim2.new(1, -30, 0, 5)
-CloseBtn.Text = "×"
-StyleButton(CloseBtn, Color3.fromRGB(200, 50, 50))
-
-MinBtn.Parent = MainFrame
-MinBtn.Size = UDim2.new(0, 25, 0, 25)
-MinBtn.Position = UDim2.new(1, -60, 0, 5)
-MinBtn.Text = "—"
-StyleButton(MinBtn, Color3.fromRGB(60, 60, 60))
-
-ToggleBtn.Parent = MainFrame
-ToggleBtn.Position = UDim2.new(0.1, 0, 0.1, 0)
-ToggleBtn.Size = UDim2.new(0.8, 0, 0, 35)
-ToggleBtn.Text = "Toggle Move"
-StyleButton(ToggleBtn, Color3.fromRGB(40, 40, 40))
-
-IYBtn.Parent = MainFrame
-IYBtn.Position = UDim2.new(0.1, 0, 0.2, 0)
-IYBtn.Size = UDim2.new(0.8, 0, 0, 35)
-IYBtn.Text = "Infinite Yield"
-StyleButton(IYBtn, Color3.fromRGB(30, 30, 30))
-
-AquaBtn.Parent = MainFrame
-AquaBtn.Position = UDim2.new(0.1, 0, 0.3, 0)
-AquaBtn.Size = UDim2.new(0.8, 0, 0, 35)
-AquaBtn.Text = "AquaMatrix"
-StyleButton(AquaBtn, Color3.fromRGB(30, 30, 30))
-
-ToolCounterBtn.Parent = MainFrame
-ToolCounterBtn.Position = UDim2.new(0.1, 0, 0.4, 0)
-ToolCounterBtn.Size = UDim2.new(0.8, 0, 0, 35)
-ToolCounterBtn.Text = "Glove Spawn"
-StyleButton(ToolCounterBtn, Color3.fromRGB(30, 30, 30))
-
-ExecToggleBtn.Parent = MainFrame
-ExecToggleBtn.Position = UDim2.new(0.1, 0, 0.5, 0)
-ExecToggleBtn.Size = UDim2.new(0.8, 0, 0, 35)
-ExecToggleBtn.Text = "Executor [v]"
-StyleButton(ExecToggleBtn, Color3.fromRGB(50, 50, 50))
-
--- --- EXECUTOR FRAME ---
-ExecFrame.Parent = MainFrame
-ExecFrame.Position = UDim2.new(0.1, 0, 0.6, 0)
-ExecFrame.Size = UDim2.new(0.8, 0, 0, 0)
-ExecFrame.ClipsDescendants = true
-ExecFrame.BackgroundTransparency = 1
-
-CodeBox.Parent = ExecFrame
-CodeBox.Size = UDim2.new(1, 0, 0, 80)
-CodeBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-CodeBox.TextColor3 = Color3.new(1, 1, 1)
-CodeBox.Text = LoadScript()
-CodeBox.ClearTextOnFocus = false
-CodeBox.MultiLine = true
-CodeBox.Font = Enum.Font.Code
-CodeBox.TextSize = 10
-Instance.new("UICorner", CodeBox)
-
-RunCodeBtn.Parent = ExecFrame
-RunCodeBtn.Size = UDim2.new(0.31, 0, 0, 25)
-RunCodeBtn.Position = UDim2.new(0, 0, 0, 85)
-RunCodeBtn.Text = "Run"
-StyleButton(RunCodeBtn, Color3.fromRGB(30, 100, 30))
-
-SaveBtn.Parent = ExecFrame
-SaveBtn.Size = UDim2.new(0.31, 0, 0, 25)
-SaveBtn.Position = UDim2.new(0.345, 0, 0, 85)
-SaveBtn.Text = "Save"
-StyleButton(SaveBtn, Color3.fromRGB(30, 60, 100))
-
-ClearCodeBtn.Parent = ExecFrame
-ClearCodeBtn.Size = UDim2.new(0.31, 0, 0, 25)
-ClearCodeBtn.Position = UDim2.new(0.69, 0, 0, 85)
-ClearCodeBtn.Text = "Clear"
-StyleButton(ClearCodeBtn, Color3.fromRGB(100, 30, 30))
-
--- Bottom Settings
-SpeedInput.Parent = MainFrame
-SpeedInput.Position = UDim2.new(0.1, 0, 0.88, 0)
-SpeedInput.Size = UDim2.new(0.8, 0, 0, 30)
-SpeedInput.Text = "250"
-SpeedInput.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-SpeedInput.TextColor3 = Color3.new(1, 1, 1)
-Instance.new("UICorner", SpeedInput)
-
-StatusLabel.Parent = MainFrame
-StatusLabel.Position = UDim2.new(0, 0, 0.95, 0)
-StatusLabel.Size = UDim2.new(1, 0, 0, 20)
-StatusLabel.Text = "bradar its chilling"
-StatusLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-StatusLabel.TextSize = 10
-StatusLabel.BackgroundTransparency = 1
-
-RestoreBtn.Parent = ScreenGui
-RestoreBtn.Size = UDim2.new(0, 120, 0, 35)
-RestoreBtn.Position = UDim2.new(0, 10, 1, -45)
-RestoreBtn.Text = "bradar restore"
-RestoreBtn.Visible = false
-StyleButton(RestoreBtn, Color3.fromRGB(45, 10, 80))
+-- Noob Icon
+local NoobContainer = Instance.new("Frame", ScreenGui); NoobContainer.Size = UDim2.new(0,45,0,45); NoobContainer.Position = UDim2.new(0,15,1,-65); NoobContainer.Visible = false; ApplyTheme(NoobContainer); Instance.new("UICorner", NoobContainer).CornerRadius = UDim.new(1,0)
+local NoobIcon = Instance.new("ImageLabel", NoobContainer); NoobIcon.Size = UDim2.new(0.8,0,0.8,0); NoobIcon.Position = UDim2.new(0.1,0,0.1,0); NoobIcon.BackgroundTransparency = 1; NoobIcon.Image = "rbxassetid://6032220199"
+local NoobBtn = Instance.new("TextButton", NoobContainer); NoobBtn.Size = UDim2.new(1,0,1,0); NoobBtn.BackgroundTransparency = 1; NoobBtn.Text = ""
 
 -- --- LOGIC ---
-local execOpen = false
-ExecToggleBtn.MouseButton1Click:Connect(function()
-    execOpen = not execOpen
-    ExecToggleBtn.Text = execOpen and "Executor [^]" or "Executor [v]"
-    local targetSize = execOpen and UDim2.new(0.8, 0, 0, 115) or UDim2.new(0.8, 0, 0, 0)
-    TweenService:Create(ExecFrame, TweenInfo.new(0.3), {Size = targetSize}):Play()
-end)
+local function runTeleport()
+    local t = CoordInput.Text:split(",")
+    if #t < 3 then return end
+    local dest = Vector3.new(tonumber(t[1]), tonumber(t[2]), tonumber(t[3]))
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = CFrame.new(dest) end
+end
 
-RunCodeBtn.MouseButton1Click:Connect(function()
-    local success, err = pcall(function() loadstring(CodeBox.Text)() end)
-    Notify(success and "Executor" or "Error", success and "Script Ran!" or "Check console")
-end)
-
-SaveBtn.MouseButton1Click:Connect(function()
-    if SaveScript(CodeBox.Text) then Notify("System", "Script Saved!") else Notify("Error", "Executor not supported") end
-end)
-
-ClearCodeBtn.MouseButton1Click:Connect(function() CodeBox.Text = "" end)
-
--- Rainbow Loop
-task.spawn(function()
-    while true do
-        local hue = tick() % 5 / 5
-        MainGradient.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromHSV(hue, 1, 1)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromHSV((hue + 0.25) % 1, 1, 1)),
-            ColorSequenceKeypoint.new(1, Color3.fromHSV((hue + 0.5) % 1, 1, 1))
-        })
-        MainStroke.Color = Color3.fromHSV(hue, 0.8, 1)
-        RunService.RenderStepped:Wait()
+local function toggleMain(state)
+    if state == false then
+        lastPos = MainFrame.Position
+        MainFrame.Visible, SettingsFrame.Visible, MoverFrame.Visible = false, false, false
+        NoobContainer.Visible = true
+    else
+        NoobContainer.Visible = false
+        MainFrame.Visible = true
+        MainFrame.Position = lastPos
     end
+    guiVisible = state
+end
+
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if isListeningMain then mainGuiHotkey = input.KeyCode; GuiHotkeyBtn.Text = "UI: " .. input.KeyCode.Name; isListeningMain = false
+    elseif isListeningMover then moverHotkey = input.KeyCode; MHotkeyBtn.Text = "KEY: " .. input.KeyCode.Name; isListeningMover = false
+    elseif input.KeyCode == mainGuiHotkey then toggleMain(not guiVisible)
+    elseif input.KeyCode == moverHotkey and MoverFrame.Visible then runTeleport() end
 end)
 
--- Movement
-local isRunning = false
-local waypoints = {Vector3.new(-79.18, 145.41, -81.43), Vector3.new(-12.04, 146.96, -80.25)}
+MinBtn.MouseButton1Click:Connect(function() toggleMain(false) end)
+NoobBtn.MouseButton1Click:Connect(function() toggleMain(true) end)
+SettingsBtn.MouseButton1Click:Connect(function() SettingsFrame.Visible = not SettingsFrame.Visible end)
+MoverV1Btn.MouseButton1Click:Connect(function() MoverFrame.Visible = not MoverFrame.Visible end)
+MClose.MouseButton1Click:Connect(function() MoverFrame.Visible = false end)
+CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+TeleBtn.MouseButton1Click:Connect(runTeleport)
+GetPosBtn.MouseButton1Click:Connect(function()
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then CoordInput.Text = string.format("%.1f,%.1f,%.1f", hrp.Position.X, hrp.Position.Y, hrp.Position.Z) end
+end)
+GuiHotkeyBtn.MouseButton1Click:Connect(function() isListeningMain = true; GuiHotkeyBtn.Text = "..." end)
+MHotkeyBtn.MouseButton1Click:Connect(function() isListeningMover = true; MHotkeyBtn.Text = "..." end)
 
 ToggleBtn.MouseButton1Click:Connect(function()
     isRunning = not isRunning
-    ToggleBtn.Text = isRunning and "ON" or "OFF"
-    ToggleBtn.BackgroundColor3 = isRunning and Color3.fromRGB(80, 20, 150) or Color3.fromRGB(40, 40, 40)
-    StatusLabel.Text = isRunning and "STATUS: doing job" or "STATUS: chilling"
+    ToggleBtn.Text = isRunning and "Walking ON" or "Walking OFF"
+    ToggleBtn.BackgroundColor3 = isRunning and Color3.fromRGB(100, 50, 200) or Color3.fromRGB(30, 30, 30)
 end)
 
+SpeedInput.FocusLost:Connect(function() movementSpeed = tonumber(SpeedInput.Text) or 250 end)
+IYBtn.MouseButton1Click:Connect(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))() end)
+AquaBtn.MouseButton1Click:Connect(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/ExploitFin/AquaMatrix/refs/heads/AquaMatrix/AquaMatrix"))() end)
+GloveBtn.MouseButton1Click:Connect(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/RealBatu20/AI-Scripts-2025/refs/heads/main/BackpackToolCounter.lua"))() end)
+
+-- --- EXECUTION START ---
+PlayScream()
+Notify("tartar hub :)", "wsg gng, Admin Detector active (original creator is asbakbaligokgok).")
+
+-- Movement Loop
 task.spawn(function()
     while true do
         if isRunning then
-            local char = player.Character or player.CharacterAdded:Wait()
-            local root = char:WaitForChild("HumanoidRootPart")
-            for _, wp in ipairs(waypoints) do
-                if not isRunning then break end
-                local speed = tonumber(SpeedInput.Text) or 250
-                local dist = (root.Position - wp).Magnitude
-                local t = TweenService:Create(root, TweenInfo.new(dist/speed, Enum.EasingStyle.Linear), {CFrame = CFrame.new(wp)})
-                t:Play()
-                t.Completed:Wait()
-                task.wait(0.1)
+            local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                for _, wp in ipairs(waypoints) do
+                    if not isRunning then break end
+                    local dist = (hrp.Position - wp).Magnitude
+                    local t = TweenService:Create(hrp, TweenInfo.new(dist/movementSpeed, Enum.EasingStyle.Linear), {CFrame = CFrame.new(wp)})
+                    t:Play(); t.Completed:Wait()
+                end
             end
         end
         task.wait(0.1)
     end
 end)
-
-CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
-MinBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false; RestoreBtn.Visible = true end)
-RestoreBtn.MouseButton1Click:Connect(function() MainFrame.Visible = true; RestoreBtn.Visible = false end)
