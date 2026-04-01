@@ -1,5 +1,5 @@
 -- tartar hub :) 
--- Added Flapjack Scream on Execution + Admin Detector
+-- Updated with new audio ID
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local StarterGui = game:GetService("StarterGui")
@@ -18,13 +18,13 @@ local lastPos = UDim2.new(0.5, -90, 0.5, -135)
 local waypoints = {Vector3.new(-79.1, 145.4, -81.4), Vector3.new(-12, 146.9, -80.2)}
 
 -- --- AUDIO EXECUTION ---
-local function PlayScream()
-    local Scream = Instance.new("Sound")
-    Scream.Parent = game:GetService("SoundService")
-    Scream.SoundId = "rbxassetid://134787106348451"
-    Scream.Volume = 1
-    Scream:Play()
-    game:GetService("Debris"):AddItem(Scream, 5) -- Clean up after 5 seconds
+local function PlayCustomAudio()
+    local Sound = Instance.new("Sound")
+    Sound.Parent = game:GetService("SoundService")
+    Sound.SoundId = "rbxassetid://134787106348451" -- Updated ID
+    Sound.Volume = 1
+    Sound:Play()
+    game:GetService("Debris"):AddItem(Sound, 5) 
 end
 
 -- --- NOTIFICATION SYSTEM ---
@@ -66,12 +66,12 @@ for _, p in ipairs(Players:GetPlayers()) do CheckForAdmin(p) end
 
 -- --- UI CREATION ---
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "TartarHub_Scream"
+ScreenGui.Name = "TartarHub_Stable"
 ScreenGui.Parent = player:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
 
 local ClickSound = Instance.new("Sound", ScreenGui)
-ClickSound.SoundId = "rbxassetid://134787106348451"
+ClickSound.SoundId = "rbxassetid://6895079853"
 ClickSound.Volume = 0.5
 
 -- Theme Helper
@@ -175,6 +175,7 @@ UserInputService.InputBegan:Connect(function(input, processed)
     elseif input.KeyCode == moverHotkey and MoverFrame.Visible then runTeleport() end
 end)
 
+-- --- BUTTON ACTIONS ---
 MinBtn.MouseButton1Click:Connect(function() toggleMain(false) end)
 NoobBtn.MouseButton1Click:Connect(function() toggleMain(true) end)
 SettingsBtn.MouseButton1Click:Connect(function() SettingsFrame.Visible = not SettingsFrame.Visible end)
@@ -200,9 +201,9 @@ IYBtn.MouseButton1Click:Connect(function() loadstring(game:HttpGet("https://raw.
 AquaBtn.MouseButton1Click:Connect(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/ExploitFin/AquaMatrix/refs/heads/AquaMatrix/AquaMatrix"))() end)
 GloveBtn.MouseButton1Click:Connect(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/RealBatu20/AI-Scripts-2025/refs/heads/main/BackpackToolCounter.lua"))() end)
 
--- --- EXECUTION START ---
-PlayScream()
-Notify("tartar hub :)", "wsg gng, Admin Detector active (original creator is asbakbaligokgok).")
+-- --- EXECUTION ---
+PlayCustomAudio()
+Notify("tartar hub :)", "Loaded! Custom audio played and Admin Detector active.")
 
 -- Movement Loop
 task.spawn(function()
